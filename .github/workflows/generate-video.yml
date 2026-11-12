@@ -1,7 +1,45 @@
-name: Generar Video de Prueba
+name: Generar Video Personalizado
 
 on:
-  workflow_dispatch: # Permite ejecutarlo manualmente con un botón
+  workflow_dispatch:
+    inputs:
+      tema:
+        description: '¿De qué quieres el video?'
+        required: true
+        type: string
+        default: 'Datos curiosos sobre la inteligencia artificial'
+      
+      estilo_musica:
+        description: 'Estilo de música de fondo'
+        required: true
+        type: choice
+        options:
+          - Hip Hop
+          - Electrónica
+          - Pop
+          - Relajante
+          - Sin música
+        default: 'Hip Hop'
+        
+      voz:
+        description: 'Tipo de voz en off'
+        required: true
+        type: choice
+        options:
+          - Femenina
+          - Masculina
+          - Neutra
+        default: 'Femenina'
+        
+      duracion:
+        description: 'Duración aproximada (segundos)'
+        required: true
+        type: choice
+        options:
+          - '15'
+          - '30'
+          - '60'
+        default: '30'
 
 jobs:
   build-video:
@@ -15,20 +53,30 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Instalar FFmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v3
+      - name: Instalar FFmpeg y fuentes
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-color-emoji
 
       - name: Ejecutar script de configuración (crea el entorno e instala dependencias)
         run: bash scripts/setup.sh
 
-      - name: Crear proyecto de prueba y generar video
+      - name: Crear proyecto y generar video con los parámetros seleccionados
+        env:
+          # Aquí pasamos las respuestas del formulario al script
+          VIDEO_TEMA: ${{ inputs.tema }}
+          VIDEO_MUSICA: ${{ inputs.estilo_musica }}
+          VIDEO_VOZ: ${{ inputs.voz }}
+          VIDEO_DURACION: ${{ inputs.duracion }}
         run: |
-          mkdir -p projects/test-video
-          cp examples/space-facts-en.json projects/test-video/storyboard.json
-          .venv/bin/python scripts/pipeline.py projects/test-video
+          mkdir -p projects/video-personalizado
+          
+          # Si tu pipeline necesita un storyboard.json, aquí podrías generarlo con un script
+          # usando las variables de entorno. Por ahora, ejecutamos el pipeline en la carpeta.
+          .venv/bin/python scripts/pipeline.py projects/video-personalizado
 
       - name: Subir Video como Artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: video-generado
-          path: projects/test-video/final.mp4
+          name: video-final
+          path: projects/video-personalizado/final.mp4
