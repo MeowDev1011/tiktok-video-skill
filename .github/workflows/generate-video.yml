@@ -1,0 +1,34 @@
+name: Generar Video de Prueba
+
+on:
+  workflow_dispatch: # Permite ejecutarlo manualmente con un botón
+
+jobs:
+  build-video:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+
+      - name: Ejecutar script de configuración (crea el entorno e instala dependencias)
+        run: bash scripts/setup.sh
+
+      - name: Crear proyecto de prueba y generar video
+        run: |
+          mkdir -p projects/test-video
+          cp examples/space-facts-en.json projects/test-video/storyboard.json
+          .venv/bin/python scripts/pipeline.py projects/test-video
+
+      - name: Subir Video como Artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-generado
+          path: projects/test-video/final.mp4
